@@ -48,7 +48,7 @@ export default function Home() {
     });
 
     if (!hasError(pix)) {
-      setHistory((old) => [...old.slice(-4)].concat([values]));
+      setHistory((old) => [values].concat([...old.slice(-4)]));
       setPixData(pix);
       form.reset();
     }
@@ -125,7 +125,21 @@ export default function Home() {
             <>
               <Divider mx={20} orientation="vertical" />
               <Box>
-                <Title order={3}>Ultimos QR Codes gerados</Title>
+                <Flex justify={`space-between`}>
+                  <Title order={3}>Ultimos QR Codes gerados</Title>
+                  <Button
+                    size="xs"
+                    variant="subtle"
+                    color={`gray`}
+                    disabled={history.length === 0}
+                    onClick={() => {
+                      setHistory([]);
+                      setShowHistory(false);
+                    }}
+                  >
+                    Limpar Histórico
+                  </Button>
+                </Flex>
 
                 <Table striped w={400}>
                   <thead>
