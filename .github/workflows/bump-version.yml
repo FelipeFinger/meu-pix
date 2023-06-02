@@ -1,0 +1,54 @@
+name: Bump version
+on:
+  workflow_dispatch:
+   # Inputs the workflow accepts.
+    inputs:
+      version:
+        # Friendly description to be shown in the UI instead of 'name'
+        description: 'Semver type of new version (major / minor / patch)'
+        # Input has to be provided for the workflow to run
+        required: true
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Bump version
+        run: |
+          CODE_VERSION=$(grep -oP '(?<=androidVersionCode = )[0-9]+' apps/teste/app.version.js)
+          NEW_CODE_VERSION=$((CODE_VERSION + 1))
+          echo "Bumping version code from $CODE_VERSION to $NEW_CODE_VERSION"
+          sed -i.bak "s/androidVersionCode = $CODE_VERSION/androidVersionCode = $NEW_CODE_VERSION/" apps/teste/app.version.js
+
+          VERSION=$(jq -r .version package.json)
+          if [ "${{ inputs.version }}" == "major" ]; then
+            NEW_VERSION=$(echo $VERSION | awk -F. '{printf("%d.%d.%d\n",$1+1,0,0)}')
+          elif [ "${{ inputs.version }}" == "minor" ]; then
+            NEW_VERSION=$(echo $VERSION | awk -F. '{printf("%d.%d.%d\n",$1,$2+1,0)}')
+          else
+            NEW_VERSION=$(echo $VERSION | awk -F. '{printf("%d.%d.%d\n",$1,$2,$3+1)}')
+          fi
+          echo ::set-output name=new_version::$NEW_VERSION
+
+          sed -i.bak "s/iosVersion = \'$VERSION\'/iosVersion = \'$NEW_VERSION\'/" apps/teste/app.version.js
+          echo "New iosVersion 1: $(grep -oP "(?<=iosVersion = ')[^']+" apps/teste/app.version.js)"
+          sed -i.bak -e "s/iosVersion = '${VERSION}'/iosVersion = '${NEW_VERSION}'/" apps/teste/app.version.js
+          echo "New iosVersion 2: $(grep -oP "(?<=iosVersion = ')[^']+" apps/teste/app.version.js)"
+
+          sed -i "s/\"version\": \"$VERSION\"/\"version\": \"$NEW_VERSION\"/g" package.json
+          find apps/ -name "package.json" -exec sed -i "s/\"version\": \"$VERSION\"/\"version\": \"$NEW_VERSION\"/g" {} +
+          git config --global user.email "$GITHUB_ACTOR_EMAIL"
+          git config --global user.name "$GITHUB_ACTOR"
+          git add package.json apps/**/package.json apps/teste/app.version.js
+          git commit -m "chore(release): v$NEW_VERSION"
+          git push origin HEAD
+          git tag -a v$NEW_VERSION -m "Version $NEW_VERSION"
+          git push origin v$NEW_VERSION --follow-tags
