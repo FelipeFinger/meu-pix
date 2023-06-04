@@ -1,25 +1,35 @@
+import QrCodeModal from '@/components/Modals/qrCodeModal';
+import { unMaskCurrency } from '@/utils/currency';
+import { maskPixKey } from '@/utils/pix';
+import { onlyNumbers } from '@/utils/string';
 import {
   Box,
   Button,
-  Divider,
   Flex,
   Group,
-  Modal,
-  Table,
+  Input,
   TextInput,
   Title,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
+import { useRouter } from 'next/router';
 import { PixStaticObject, createStaticPix, hasError } from 'pix-utils';
-import { useState } from 'react';
-import { QRCode } from 'react-qrcode-logo';
+import { useEffect, useState } from 'react';
+import {
+  FiArrowRight,
+  FiDollarSign,
+  FiFile,
+  FiKey,
+  FiUser,
+} from 'react-icons/fi';
+import { NumericFormat } from 'react-number-format';
 
 export default function Home() {
+  const router = useRouter();
   const [opened, { open, close }] = useDisclosure(false);
   const [pixData, setPixData] = useState<PixStaticObject>();
-  const [showHistory, setShowHistory] = useState(false);
-  const [history, setHistory] = useLocalStorage({
+  const [, setHistory] = useLocalStorage({
     key: `history-qrcodes`,
     defaultValue: [] as any[],
   });
@@ -30,25 +40,49 @@ export default function Home() {
       amount: ``,
       description: ``,
     },
-
-    // validate: {
-    //   email: (value) => (/^\S+@\S+$/.test(value) ? null : `Invalid email`),
-    // },
   });
 
-  const onSubmit = (values) => {
-    setPixData(values);
+  useEffect(() => {
+    if (router.query) {
+      form.setFieldValue(`key`, maskPixKey(router.query?.key as string).masked);
+      form.setFieldValue(`name`, (router.query?.name as string) || ``);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.query]);
 
-    const pix = createStaticPix({
+  const onSubmit = (values) => {
+    if (!form.isValid) return;
+    const pixKey = maskPixKey(
+      [`CPF`, `CNPJ`, `PHONE`].includes(
+        maskPixKey(onlyNumbers(values.key)).type,
+      )
+        ? onlyNumbers(values.key)
+        : values.key,
+    );
+
+    if (pixKey.type === `INVALID`) {
+      return form.setFieldError(`key`, `Chave Pix inválida`);
+    }
+
+    const data = {
       merchantName: values.name,
       merchantCity: `Sao Paulo`,
-      pixKey: values.key,
+      pixKey: pixKey.raw,
       infoAdicional: values.description,
-      transactionAmount: +values.amount,
-    });
+      transactionAmount: unMaskCurrency(values.amount),
+    };
+
+    const pix = createStaticPix(data);
 
     if (!hasError(pix)) {
-      setHistory((old) => [values].concat([...old.slice(-4)]));
+      const generated = {
+        name: data.merchantName,
+        key: data.pixKey,
+        amount: data.transactionAmount,
+        description: data.infoAdicional,
+        brCode: pix.toBRCode(),
+      };
+      setHistory((old) => [generated].concat([...old.slice(-4)]));
       setPixData(pix);
       form.reset();
     }
@@ -56,115 +90,75 @@ export default function Home() {
   };
 
   return (
-    <>
-      <Modal opened={opened} onClose={close} title="QR Code Pix">
-        <QRCode value={pixData?.toBRCode()} size={256} removeQrCodeBehindLogo />
-      </Modal>
+    <Box>
+      <QrCodeModal pixData={pixData} opened={opened} close={close} />
       <Flex
         justify={`center`}
         sx={{
-          padding: 50,
+          borderRadius: 10,
         }}
       >
-        <Flex
-          maw={800}
-          justify={`center`}
-          sx={{
-            backgroundColor: `#f7f7f7`,
-            borderRadius: 10,
-            padding: 20,
-          }}
-        >
-          <Box w={400}>
-            <Flex justify={`space-between`}>
-              <Title order={3}>Novo QR Code</Title>
-              <Button
-                size="xs"
-                variant="subtle"
-                color={`gray`}
-                disabled={history.length === 0}
-                onClick={() => setShowHistory((old) => !old)}
-              >
-                Histórico
-              </Button>
-            </Flex>
-            <form onSubmit={form.onSubmit(onSubmit)}>
-              <TextInput
-                withAsterisk
-                required
-                label="Nome Completo"
-                {...form.getInputProps(`name`)}
-              />
+        <Box w={400} p={20}>
+          <Title order={3}>Novo QR Code</Title>
+          <form onSubmit={form.onSubmit(onSubmit)}>
+            <TextInput
+              withAsterisk
+              icon={<FiUser />}
+              required
+              label="Nome Completo"
+              {...form.getInputProps(`name`)}
+            />
 
-              <TextInput
-                withAsterisk
-                required
-                label="Chave Pix"
-                {...form.getInputProps(`key`)}
-              />
+            <TextInput
+              withAsterisk
+              icon={<FiKey />}
+              required
+              label="Chave Pix"
+              {...form.getInputProps(`key`)}
+              value={form.values.key}
+              onChange={(v) => {
+                form.setFieldValue(
+                  `key`,
+                  maskPixKey(
+                    [`CPF`, `CNPJ`, `PHONE`].includes(
+                      maskPixKey(onlyNumbers(v.target.value)).type,
+                    )
+                      ? onlyNumbers(v.target.value)
+                      : v.target.value,
+                  ).masked,
+                );
+              }}
+            />
 
-              <TextInput
-                withAsterisk
+            <Input.Wrapper label="Valor" withAsterisk required>
+              <Input<any>
+                component={NumericFormat}
+                allowNegative={false}
+                thousandSeparator={`.`}
+                icon={<FiDollarSign />}
+                decimalSeparator={`,`}
+                fixedDecimalScale={2}
+                decimalScale={2}
                 required
-                type="number"
-                label="Valor"
+                prefix={`R$ `}
                 {...form.getInputProps(`amount`)}
               />
+            </Input.Wrapper>
 
-              <TextInput
-                label="Descrição"
-                {...form.getInputProps(`description`)}
-              />
+            <TextInput
+              label="Descrição"
+              icon={<FiFile />}
+              {...form.getInputProps(`description`)}
+            />
 
-              <Group position="center" mt={20}>
-                <Button type="submit">Gerar QR Code</Button>
-              </Group>
-            </form>
-          </Box>
-          {showHistory && (
-            <>
-              <Divider mx={20} orientation="vertical" />
-              <Box>
-                <Flex justify={`space-between`}>
-                  <Title order={3}>Ultimos QR Codes gerados</Title>
-                  <Button
-                    size="xs"
-                    variant="subtle"
-                    color={`gray`}
-                    disabled={history.length === 0}
-                    onClick={() => {
-                      setHistory([]);
-                      setShowHistory(false);
-                    }}
-                  >
-                    Limpar Histórico
-                  </Button>
-                </Flex>
-
-                <Table striped w={400}>
-                  <thead>
-                    <tr>
-                      <th>Nome</th>
-                      <th>Chave</th>
-                      <th>Valor</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {history.map((item: any, i) => (
-                      <tr key={i}>
-                        <td>{item?.name}</td>
-                        <td>{item?.key}</td>
-                        <td>{item?.amount}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </Box>
-            </>
-          )}
-        </Flex>
+            <Group position="center" mt={20}>
+              <Button rightIcon={<FiArrowRight />} type="submit">
+                Gerar QR Code
+              </Button>
+            </Group>
+          </form>
+        </Box>
       </Flex>
-    </>
+    </Box>
   );
 }
