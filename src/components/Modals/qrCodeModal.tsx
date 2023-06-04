@@ -27,7 +27,12 @@ function QrCodeModal({ pixData, opened, close }) {
         <Badge my={5}>
           {pixData?.infoAdicional || `Nenhuma descrição informada`}
         </Badge>
-        <Box my={10}>
+        <Box
+          my={15}
+          bg={qrStyle.bgColor}
+          p={15}
+          sx={{ borderRadius: 15, border: `2px solid #ccc` }}
+        >
           <QRCodeCanvas
             value={pixData?.toBRCode()}
             fgColor={qrStyle.fgColor}

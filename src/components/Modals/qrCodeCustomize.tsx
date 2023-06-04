@@ -99,7 +99,12 @@ function QrCodeCustomize() {
             />
           </Stack>
           <Title order={5}>Pré-visualização</Title>
-          <Box my={10}>
+          <Box
+            my={15}
+            bg={qrStyle.bgColor}
+            p={15}
+            sx={{ borderRadius: 15, border: `2px solid #ccc` }}
+          >
             <QRCodeCanvas
               value={`Felipe é Lindo`}
               fgColor={qrStyle.fgColor}

@@ -41,7 +41,12 @@ function QrCodeHistoryModal({ amount, description, name, brCode }) {
         <Flex justify={`center`} align={`center`} direction={`column`}>
           <Title order={2}>{maskCurrency(amount)}</Title>
           <Badge my={5}>{description || `Nenhuma descrição informada`}</Badge>
-          <Box my={10}>
+          <Box
+            my={15}
+            bg={qrStyle.bgColor}
+            p={15}
+            sx={{ borderRadius: 15, border: `2px solid #ccc` }}
+          >
             <QRCodeCanvas
               value={brCode}
               fgColor={qrStyle.fgColor}
