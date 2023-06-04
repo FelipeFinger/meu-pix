@@ -1,7 +1,17 @@
 import { maskCurrency } from '@/utils/currency';
-import { Badge, Box, Button, Flex, Modal, Title } from '@mantine/core';
+import {
+  Badge,
+  Box,
+  Button,
+  Flex,
+  Modal,
+  Stack,
+  Text,
+  Title,
+} from '@mantine/core';
 import { useClipboard, useLocalStorage } from '@mantine/hooks';
 import { QRCodeCanvas } from 'qrcode.react';
+import { FiCheck } from 'react-icons/fi';
 
 function QrCodeModal({ pixData, opened, close }) {
   const clipboard = useClipboard({ timeout: 1000 });
@@ -37,20 +47,26 @@ function QrCodeModal({ pixData, opened, close }) {
             value={pixData?.toBRCode()}
             fgColor={qrStyle.fgColor}
             bgColor={qrStyle.bgColor}
-            size={256}
+            size={200}
             imageSettings={qrStyle.imageSettings}
           />
         </Box>
+        <Text size={`xs`}>Recebedor</Text>
         <Title order={4}>{pixData?.merchantName}</Title>
-        <Button
-          size={`xs`}
-          disabled={clipboard.copied}
-          onClick={() => {
-            clipboard.copy(pixData?.toBRCode());
-          }}
-        >
-          {clipboard.copied ? `BRCode Copiado` : `Copiar BRCode`}
-        </Button>
+        <Stack spacing={10} mt={10}>
+          <Button
+            size={`xs`}
+            disabled={clipboard.copied}
+            onClick={() => {
+              clipboard.copy(pixData?.toBRCode());
+            }}
+          >
+            {clipboard.copied ? `BRCode Copiado` : `Copiar BRCode`}
+          </Button>
+          <Button size={`xs`} rightIcon={<FiCheck />} onClick={close}>
+            Ok
+          </Button>
+        </Stack>
       </Flex>
     </Modal>
   );

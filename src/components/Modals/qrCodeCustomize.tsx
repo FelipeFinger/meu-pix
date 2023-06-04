@@ -5,6 +5,7 @@ import {
   ColorInput,
   FileInput,
   Flex,
+  Group,
   Modal,
   Stack,
   Title,
@@ -14,7 +15,7 @@ import { useDisclosure, useLocalStorage } from '@mantine/hooks';
 import { IconUpload } from '@tabler/icons-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useState } from 'react';
-import { FiSettings, FiTrash2 } from 'react-icons/fi';
+import { FiCheck, FiSettings, FiTrash2 } from 'react-icons/fi';
 
 function QrCodeCustomize() {
   const [imgFile, setImgFile] = useState<File | null>(null);
@@ -109,14 +110,18 @@ function QrCodeCustomize() {
               value={`Felipe é Lindo`}
               fgColor={qrStyle.fgColor}
               bgColor={qrStyle.bgColor}
-              size={256}
+              size={200}
               imageSettings={qrStyle.imageSettings}
             />
           </Box>
-
-          <Button rightIcon={<FiTrash2 />} onClick={resetStyles}>
-            Resetar
-          </Button>
+          <Group>
+            <Button rightIcon={<FiTrash2 />} onClick={resetStyles} color="red">
+              Resetar
+            </Button>
+            <Button rightIcon={<FiCheck />} onClick={close}>
+              Ok
+            </Button>
+          </Group>
         </Flex>
       </Modal>
     </>

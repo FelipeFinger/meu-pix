@@ -6,12 +6,14 @@ import {
   Button,
   Flex,
   Modal,
+  Stack,
+  Text,
   Title,
   Tooltip,
 } from '@mantine/core';
 import { useClipboard, useDisclosure, useLocalStorage } from '@mantine/hooks';
 import { QRCodeCanvas } from 'qrcode.react';
-import { FiEye } from 'react-icons/fi';
+import { FiCheck, FiEye } from 'react-icons/fi';
 
 function QrCodeHistoryModal({ amount, description, name, brCode }) {
   const [opened, { open, close }] = useDisclosure(false);
@@ -51,20 +53,26 @@ function QrCodeHistoryModal({ amount, description, name, brCode }) {
               value={brCode}
               fgColor={qrStyle.fgColor}
               bgColor={qrStyle.bgColor}
-              size={256}
+              size={200}
               imageSettings={qrStyle.imageSettings}
             />
           </Box>
+          <Text size={`xs`}>Recebedor</Text>
           <Title order={4}>{name}</Title>
-          <Button
-            size={`xs`}
-            disabled={clipboard.copied}
-            onClick={() => {
-              clipboard.copy(brCode);
-            }}
-          >
-            {clipboard.copied ? `BRCode Copiado` : `Copiar BRCode`}
-          </Button>
+          <Stack spacing={10} mt={10}>
+            <Button
+              size={`xs`}
+              disabled={clipboard.copied}
+              onClick={() => {
+                clipboard.copy(brCode);
+              }}
+            >
+              {clipboard.copied ? `BRCode Copiado` : `Copiar BRCode`}
+            </Button>
+            <Button size={`xs`} rightIcon={<FiCheck />} onClick={close}>
+              Ok
+            </Button>
+          </Stack>
         </Flex>
       </Modal>
     </>
